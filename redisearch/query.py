@@ -24,6 +24,8 @@ class Query(object):
         self._verbatim = False
         self._with_payloads = False
         self._with_scores = False
+        self._scorer = None
+        self._expander = None
         self._filters = list()
         self._ids = None
         self._slop = -1
@@ -87,6 +89,14 @@ class Query(object):
 
         if self._no_stopwords:
             args.append('NOSTOPWORDS')
+
+        if self._expander:
+            args.append('EXPANDER')
+            args.append(self._expander)
+
+        if self._scorer:
+            args.append('SCORER')
+            args.append(self._scorer)
 
         if self._filters:
             for flt in self._filters:
@@ -166,7 +176,23 @@ class Query(object):
         """
         self._with_scores = True
         return self
+
+    def expander(self, expander):
+        """
+        Specify customized expander to use.
+        The expander name my have been registered at redisearch server side.
+        """
+        self._expander = expander
+        return self
     
+    def scorer(self, scorer):
+        """
+        Specify customized scorer to use.
+        The scorer name my have been registered at redisearch server side.
+        """
+        self._scorer = scorer
+        return self
+
     def limit_fields(self, *fields):
         """
         Limit the search to specific TEXT fields only

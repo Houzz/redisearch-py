@@ -2,7 +2,7 @@ from redis import Redis, RedisError, ConnectionPool
 import itertools
 import time
 from .document import Document
-from .result import Result
+from .result import Result, NERResult
 from .query import Query, Filter
 
 
@@ -27,14 +27,11 @@ class TextField(Field):
     """
     TextField is used to define a text field in a schema definition
     """
-    NOSTEM = 'NOSTEM'
 
-    def __init__(self, name, weight=1.0, sortable=False, no_stem=False):
+    def __init__(self, name, weight=1.0, sortable = False):
         args = [Field.TEXT, Field.WEIGHT, weight]
         if sortable:
             args.append(Field.SORTABLE)
-        if no_stem:
-            args.append(self.NOSTEM)
 
         Field.__init__(self, name, *args)
 
@@ -135,7 +132,7 @@ class Client(object):
         return Client.BatchIndexer(self, chunk_size=chunk_size)
 
     def create_index(self, fields, no_term_offsets=False,
-                     no_field_flags=False, no_score_indexes=False, stopwords = None):
+                     no_field_flags=False, no_score_indexes=False, stopwords = None, index_name = None):
         """
         Create the search index. Creating an existing index juts updates its properties
 
@@ -148,7 +145,7 @@ class Client(object):
         - **stopwords**: If not None, we create the index with this custom stopword list. The list can be empty
         """
 
-        args = [self.CREATE_CMD, self.index_name]
+        args = [self.CREATE_CMD, self.index_name] if not index_name else [self.CREATE_CMD, index_name]
         if no_term_offsets:
             args.append(self.NOOFFSETS)
         if no_field_flags:
@@ -219,6 +216,13 @@ class Client(object):
 
         return conn.execute_command(self.DEL_CMD, self.index_name, doc_id)
 
+    def set_index_name(self, idx_name):
+        """
+        Set index name to idx_name
+        """
+        self.index_name = idx_name
+    
+    
     def load_document(self, id):
         """
         Load a single document by id
@@ -240,7 +244,7 @@ class Client(object):
 
         return {res[i]: res[i + 1] for i in range(0, len(res), 2)}
 
-    def search(self, query, snippet_sizes=None):
+    def search(self, query, index_name=None, snippet_sizes=None):
         """
         Search the index for a given query, and return a result of documents
 
@@ -251,7 +255,7 @@ class Client(object):
         - **snippet_sizes**: A dictionary of {field: snippet_size} used to trim and format the result. e.g.e {'body': 500}
         """
 
-        args = [self.index_name]
+        args = [self.index_name] if not index_name else [index_name]
 
         if isinstance(query, (str, unicode)):
             # convert the query from a text to a query object
@@ -268,4 +272,37 @@ class Client(object):
         return Result(res, not query._no_content, query_text=query_text,
                       snippets=snippet_sizes, duration=(
                           time.time() - st) * 1000.0,
-                      has_payload=query._with_payloads)
+                      has_payload=query._with_payloads,
+                      has_score=query._with_scores)
+
+    def search_ner(self, query, index_name=None, original_query=None, type=None, snippet_sizes=None):
+        """
+        Search the index for a given query, and return a result of documents
+
+        ### Parameters
+
+        - **query**: the search query. Either a text for simple queries with default parameters, or a Query object for complex queries.
+                     See RediSearch's documentation on query format
+        - **snippet_sizes**: A dictionary of {field: snippet_size} used to trim and format the result. e.g.e {'body': 500}
+        """
+
+        args = [self.index_name] if not index_name else [index_name]
+
+        if isinstance(query, (str, unicode)):
+            # convert the query from a text to a query object
+            query = Query(query)
+        if not isinstance(query, Query):
+            raise ValueError("Bad query type %s" % type(query))
+
+        args += query.get_args()
+        query_text = query.query_string()
+
+        st = time.time()
+        res = self.redis.execute_command(self.SEARCH_CMD, *args)
+
+        return NERResult(res, not query._no_content, query_text=query_text,
+                      snippets=snippet_sizes, duration=(
+                          time.time() - st) * 1000.0,
+                      has_payload=query._with_payloads,
+                      has_score=query._with_scores, original_query=original_query, ner_type=type)
+        

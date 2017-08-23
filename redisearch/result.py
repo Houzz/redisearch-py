@@ -7,7 +7,7 @@ class NERResult(object):
     Represents the result of a search query, and has an array of Document objects
     """
 
-    def __init__(self, res, hascontent, query_text, duration=0, snippets = None, has_payload = False, has_score = False, original_query=None, ner_type=None):
+    def __init__(self, res, hascontent, query_text, duration=0, snippets = None, has_payload = False, has_score = False, original_query=None, ner_type=None, topic_queries=None):
         self.total = res[0]
         self.duration = duration
         docs = []
@@ -45,7 +45,7 @@ class NERResult(object):
                 fields = dict(
                     dict(itertools.izip(res[i + fields_offset][::2], res[i + fields_offset][1::2]))) if hascontent else {}
 
-            entity.set_from_redis_hit(fields, original_query,score, ner_type)
+            entity.set_from_redis_hit(fields, original_query,score, ner_type, topic_queries)
             
             if len(entity.matchedPhrases) > 0:
                 docs.append(entity)

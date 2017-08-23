@@ -277,7 +277,7 @@ class Client(object):
                       has_payload=query._with_payloads,
                       has_score=query._with_scores)
 
-    def search_ner(self, query, original_query=None, type=None, index_name =None, snippet_sizes=None):
+    def search_ner(self, query, original_query=None, type=None, index_name =None, snippet_sizes=None, topic_queries=None):
         """
         Search the index for a given query, and return a result of documents
 
@@ -306,5 +306,5 @@ class Client(object):
                       snippets=snippet_sizes, duration=(
                           time.time() - st) * 1000.0,
                       has_payload=query._with_payloads,
-                      has_score=query._with_scores, original_query=original_query, ner_type=type)
+                      has_score=query._with_scores, original_query=original_query, ner_type=type, topic_queries=topic_queries)
         

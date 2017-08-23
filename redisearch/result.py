@@ -10,7 +10,7 @@ class NERResult(object):
     def __init__(self, res, hascontent, query_text, duration=0, snippets = None, has_payload = False, has_score = False, original_query=None, ner_type=None):
         self.total = res[0]
         self.duration = duration
-        self.docs = []
+        docs = []
                 
         tokens = filter(None, query_text.rstrip("\" ").lstrip(" \"").split(' '))
         step = 1
@@ -46,9 +46,18 @@ class NERResult(object):
                     dict(itertools.izip(res[i + fields_offset][::2], res[i + fields_offset][1::2]))) if hascontent else {}
 
             entity.set_from_redis_hit(fields, original_query,score, ner_type)
-                            
-            self.docs.append(entity)
             
+            if len(entity.matchedPhrases) > 0:
+                docs.append(entity)
+
+        self.docs=sorted(docs, key=lambda x: x.score, reverse=True)
+
+
+    def __repr__(self):
+
+        return 'Result{%d total, docs: %s}' % (self.total, self.docs)
+    
+    
             
 class Result(object):
     """

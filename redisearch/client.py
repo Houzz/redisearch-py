@@ -2,7 +2,7 @@ from redis import Redis, RedisError, ConnectionPool
 import itertools
 import time
 from .document import Document
-from .result import Result
+from .result import Result, NERResult
 from .query import Query, Filter
 
 
@@ -35,7 +35,6 @@ class TextField(Field):
             args.append(Field.SORTABLE)
         if no_stem:
             args.append(self.NOSTEM)
-
         Field.__init__(self, name, *args)
 
 
@@ -247,7 +246,7 @@ class Client(object):
 
         return {res[i]: res[i + 1] for i in range(0, len(res), 2)}
 
-    def search(self, query, snippet_sizes=None, index_name=None):
+    def search(self, query, index_name=None, snippet_sizes=None):
         """
         Search the index for a given query, and return a result of documents
 
@@ -277,3 +276,35 @@ class Client(object):
                           time.time() - st) * 1000.0,
                       has_payload=query._with_payloads,
                       has_score=query._with_scores)
+
+    def search_ner(self, query, original_query=None, type=None, index_name =None, snippet_sizes=None, topic_queries=None):
+        """
+        Search the index for a given query, and return a result of documents
+
+        ### Parameters
+
+        - **query**: the search query. Either a text for simple queries with default parameters, or a Query object for complex queries.
+                     See RediSearch's documentation on query format
+        - **snippet_sizes**: A dictionary of {field: snippet_size} used to trim and format the result. e.g.e {'body': 500}
+        """
+
+        args = [self.index_name] if not index_name else [index_name]
+
+        if isinstance(query, (str, unicode)):
+            # convert the query from a text to a query object
+            query = Query(query)
+        if not isinstance(query, Query):
+            raise ValueError("Bad query type %s" % type(query))
+
+        args += query.get_args()
+        query_text = query.query_string()
+
+        st = time.time()
+        res = self.redis.execute_command(self.SEARCH_CMD, *args)
+
+        return NERResult(res, not query._no_content, query_text=query_text,
+                      snippets=snippet_sizes, duration=(
+                          time.time() - st) * 1000.0,
+                      has_payload=query._with_payloads,
+                      has_score=query._with_scores, original_query=original_query, ner_type=type, topic_queries=topic_queries)
+        

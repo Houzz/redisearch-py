@@ -1,6 +1,64 @@
 import itertools
 from .document import Document
+from houzz.wise.ner.ner_types import NerRuleEntity
 
+class NERResult(object):
+    """
+    Represents the result of a search query, and has an array of Document objects
+    """
+
+    def __init__(self, res, hascontent, query_text, duration=0, snippets = None, has_payload = False, has_score = False, original_query=None, ner_type=None, topic_queries=None):
+        self.total = res[0]
+        self.duration = duration
+        docs = []
+                
+        tokens = filter(None, query_text.rstrip("\" ").lstrip(" \"").split(' '))
+        step = 1
+        if hascontent:
+            step += 1
+            if has_payload:
+                step += 1
+        else:
+            # we can't have nocontent and payloads in the same response
+            has_payload = False
+
+        if has_score:
+            step += 1
+        
+        for i in xrange(1, len(res), step):
+            id = res[i]
+            fields_offset = 1
+            score = None
+            payload = None
+            entity = NerRuleEntity()
+
+            if has_score:
+                score = float(res[i + fields_offset])
+                fields_offset += 1
+
+            if has_payload:
+                payload = res[i + fields_offset]
+                fields_offset += 1
+            
+            fields = {} 
+            if hascontent:
+                fields = dict(
+                    dict(itertools.izip(res[i + fields_offset][::2], res[i + fields_offset][1::2]))) if hascontent else {}
+
+            entity.set_from_redis_hit(fields, original_query,score, ner_type, topic_queries)
+            
+            if len(entity.matchedPhrases) > 0:
+                docs.append(entity)
+
+        self.docs=sorted(docs, key=lambda x: x.score, reverse=True)
+
+
+    def __repr__(self):
+
+        return 'Result{%d total, docs: %s}' % (self.total, self.docs)
+    
+    
+            
 class Result(object):
     """
     Represents the result of a search query, and has an array of Document objects

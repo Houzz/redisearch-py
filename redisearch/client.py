@@ -263,7 +263,7 @@ class Client(object):
             # convert the query from a text to a query object
             query = Query(query)
         if not isinstance(query, Query):
-            raise ValueError("Bad query type")
+            raise ValueError("Bad query type %s" % type(query))
 
         args += query.get_args()
         query_text = query.query_string()
@@ -294,7 +294,7 @@ class Client(object):
             # convert the query from a text to a query object
             query = Query(query)
         if not isinstance(query, Query):
-            raise ValueError("Bad query type %s" % type(query))
+            raise ValueError("Bad query type")
 
         args += query.get_args()
         query_text = query.query_string()

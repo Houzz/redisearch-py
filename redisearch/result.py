@@ -28,8 +28,8 @@ class Result(object):
 
         if has_score:
             step += 1
-        
-        for i in xrange(1, len(res), step):
+
+        for i in range(1, len(res), step):
             id = res[i]
             fields_offset = 1
             score = None
@@ -42,8 +42,8 @@ class Result(object):
             if has_payload:
                 payload = res[i + fields_offset]
                 fields_offset += 1
-            
-            fields = {} 
+
+            fields = {}
             if hascontent:
                 fields = dict(
                     dict(itertools.izip(res[i + fields_offset][::2], res[i + fields_offset][1::2]))) if hascontent else {}
@@ -57,7 +57,7 @@ class Result(object):
             if hascontent and snippets:
                 for k,v in snippets.iteritems():
                     doc.snippetize(k, size=v, bold_tokens = tokens)
-                
+
             self.docs.append(doc)
 
 

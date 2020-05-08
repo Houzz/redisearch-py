@@ -9,7 +9,7 @@ class Suggestion(object):
         self.string = string
         self.score = score
         self.payload = payload
-    
+
     def __repr__(self):
 
         return self.string
@@ -42,7 +42,7 @@ class SuggestionParser(object):
         self._sugs = ret
 
     def __iter__(self):
-        for i in xrange(0, len(self._sugs), self.sugsize):
+        for i in range(0, len(self._sugs), self.sugsize):
             ss = self._sugs[i]
             score = float(self._sugs[i + self._scoreidx]) if self.with_scores else 1.0
             payload = self._sugs[i + self._payloadidx] if self.with_payloads else None
@@ -53,7 +53,7 @@ class AutoCompleter(object):
     """
     A client to RediSearch's AutoCompleter API
 
-    It provides prefix searches with optionally fuzzy matching of prefixes    
+    It provides prefix searches with optionally fuzzy matching of prefixes
     """
 
     SUGADD_COMMAND = "FT.SUGADD"
@@ -117,13 +117,13 @@ class AutoCompleter(object):
 
         ### Parameters:
         - **prefix**: the prefix we are searching. **Must be valid ascii or utf-8**
-        - **fuzzy**: If set to true, the prefix search is done in fuzzy mode. 
+        - **fuzzy**: If set to true, the prefix search is done in fuzzy mode.
             **NOTE**: Running fuzzy searches on short (<3 letters) prefixes can be very slow, and even scan the entire index.
-        - **with_scores**: if set to true, we also return the (refactored) score of each suggestion. 
+        - **with_scores**: if set to true, we also return the (refactored) score of each suggestion.
           This is normally not needed, and is NOT the original score inserted into the index
         - **with_payloads**: Return suggestion payloads
         - **num**: The maximum number of results we return. Note that we might return less. The algorithm trims irrelevant suggestions.
-        
+
         Returns a list of Suggestion objects. If with_scores was False, the score of all suggestions is 1.
         """
 

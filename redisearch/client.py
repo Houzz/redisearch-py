@@ -259,7 +259,7 @@ class Client(object):
 
         args = [self.index_name] if not index_name else [index_name]
 
-        if isinstance(query, (str, unicode)):
+        if isinstance(query, str):
             # convert the query from a text to a query object
             query = Query(query)
         if not isinstance(query, Query):

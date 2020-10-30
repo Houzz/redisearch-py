@@ -46,7 +46,8 @@ class Result(object):
             fields = {}
             if hascontent:
                 fields = dict(
-                    dict(itertools.izip(res[i + fields_offset][::2], res[i + fields_offset][1::2]))) if hascontent else {}
+                    dict(zip((str(v, "utf-8") for v in res[i + fields_offset][::2]),
+                              (str(v,"utf-8") for v in res[i + fields_offset][1::2])))) if hascontent else {}
             try:
                 del fields['id']
             except KeyError:

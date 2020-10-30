@@ -8,7 +8,7 @@ class Document(object):
         self.id = id
         self.payload = payload
         self.score = score
-        for k, v in fields.iteritems():
+        for k, v in fields.items():
             setattr(self, k, v)
 
     def __repr__(self):
